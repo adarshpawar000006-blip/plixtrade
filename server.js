@@ -426,3 +426,77 @@ app.listen(PORT, () => {
   console.log(`\n🚀 PlixTrade Pro running at http://localhost:${PORT}`);
   console.log(`   Admin: admin@plixtrade.com  |  Password: admin123\n`);
 });
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// 🔥 TERA SUPABASE CONFIG
+const SUPABASE_URL = "https://zercukdxnaltfawkdfrk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcmN1a2R4bmFsdGZhd2tkZnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjMxNjQsImV4cCI6MjA5MDYzOTE2NH0.uzJP8PtMoZjyfJJ6iOlYW_4dqwXOjQf55WQD6PwE8CY";
+
+// 👉 TABLE NAME (same rakhna Supabase me)
+const TABLE = "trades";
+
+// ✅ SAVE TRADE
+app.post("/add-trade", async (req, res) => {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ GET ALL TRADES
+app.get("/trades", async (req, res) => {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*`, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ DELETE TRADE
+app.delete("/delete-trade/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+      method: "DELETE",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000 🚀");
+});
