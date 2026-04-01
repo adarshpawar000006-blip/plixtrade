@@ -176,16 +176,31 @@ app.post('/api/auth/register', async (req, res) => {
   res.json({ token, user: data });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  const user = db.prepare('SELECT * FROM users WHERE email=?').get(email);
-  if (!user || !bcrypt.compareSync(password, user.password_hash))
-    return res.status(401).json({ error: 'Invalid credentials' });
-  if (user.status === 'blocked')
-    return res.status(403).json({ error: 'Account blocked. Contact support.' });
 
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  if (user.status === 'blocked') {
+    return res.status(403).json({ error: 'Account blocked' });
+  }
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
   const { password_hash, ...safe } = user;
+
   res.json({ token, user: safe });
 });
 
