@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PlixTrade Admin — Control Panel</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;
+  --text:#e6edf3;--sub:#7d8590;
+  --green:#3fb950;--red:#f85149;--blue:#388bfd;--gold:#f0b429;--orange:#f0883e;
+  --sidebar:230px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);
+         display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;overflow-y:auto}
+.logo{padding:18px 16px;border-bottom:1px solid var(--border)}
+.logo h2{font-size:17px;font-weight:700}
+.logo h2 span{color:var(--red)}
+.logo small{color:var(--sub);font-size:11px}
+.admin-badge{background:var(--red);color:#fff;border-radius:4px;font-size:10px;padding:2px 6px;margin-left:6px;font-weight:700}
+.nav{flex:1;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;
+          font-size:13px;font-weight:500;color:var(--sub);transition:.15s;border-radius:6px;margin:1px 8px}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(248,81,73,.1);color:var(--red)}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.main{margin-left:var(--sidebar);flex:1;overflow-y:auto}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;
+        display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h2{font-size:16px;font-weight:600}
+.topbar-pills{display:flex;gap:8px}
+.pill{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);
+      border-radius:20px;padding:4px 12px;font-size:12px;color:var(--red)}
+.pill.green{background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--green)}
+.section{display:none;padding:24px}
+.section.active{display:block}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card-label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.card-value{font-size:22px;font-weight:700}
+.card-value.green{color:var(--green)}.card-value.red{color:var(--red)}.card-value.gold{color:var(--gold)}.card-value.orange{color:var(--orange)}
+/* TABLE */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th{text-align:left;font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;
+   padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+tr:hover td{background:var(--bg3)}
+.tag{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag.active{background:rgba(63,185,80,.1);color:var(--green)}
+.tag.blocked{background:rgba(248,81,73,.1);color:var(--red)}
+.tag.open{background:rgba(56,139,253,.1);color:var(--blue)}
+.tag.closed{background:var(--bg3);color:var(--sub)}
+.tag.buy{background:rgba(63,185,80,.1);color:var(--green)}
+.tag.sell{background:rgba(248,81,73,.1);color:var(--red)}
+.tag.pending{background:rgba(240,180,41,.1);color:var(--gold)}
+.tag.approved{background:rgba(63,185,80,.1);color:var(--green)}
+.tag.rejected{background:rgba(248,81,73,.1);color:var(--red)}
+/* BUTTONS */
+.btn-sm{padding:5px 10px;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn-blue{background:rgba(56,139,253,.15);color:var(--blue);border:1px solid rgba(56,139,253,.3)}
+.btn-green{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.btn-red{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.btn-gold{background:rgba(240,180,41,.15);color:var(--gold);border:1px solid rgba(240,180,41,.3)}
+.btn-sm:hover{opacity:.8;transform:translateY(-1px)}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue)}
+.form-group textarea{resize:vertical;min-height:70px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.btn-modal{padding:9px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-cancel{background:var(--bg3);color:var(--sub)}
+.btn-save{background:var(--gold);color:#000}
+.btn-save:hover{background:#e0a820}
+/* SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-input{background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+              padding:8px 14px;color:var(--text);font-size:13px;outline:none;flex:1;min-width:200px}
+.search-input:focus{border-color:var(--blue)}
+.filter-btn{padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);
+            color:var(--sub);font-size:12px;cursor:pointer;transition:.15s}
+.filter-btn.active,.filter-btn:hover{border-color:var(--gold);color:var(--gold)}
+/* SECTION HEADER */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-header h3{font-size:15px;font-weight:600}
+/* TOAST */
+.toast{position:fixed;top:20px;right:20px;padding:12px 18px;border-radius:8px;font-size:13px;
+       font-weight:600;z-index:9999;transform:translateY(-100px);transition:.3s;opacity:0}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.green{background:rgba(63,185,80,.2);border:1px solid var(--green);color:var(--green)}
+.toast.red{background:rgba(248,81,73,.2);border:1px solid var(--red);color:var(--red)}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row span:first-child{color:var(--sub)}
+.info-row span:last-child{font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo"><h2>Plix<span>Trade</span><span class="admin-badge">ADMIN</span></h2><small>Control Panel v2.0</small></div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="nav('dashboard')"><span>📊</span> Dashboard</div>
+    <div class="nav-item" onclick="nav('users')"><span>👥</span> Users</div>
+    <div class="nav-item" onclick="nav('trades')"><span>📈</span> All Trades</div>
+    <div class="nav-item" onclick="nav('deposits')"><span>💵</span> Deposits</div>
+    <div class="nav-item" onclick="nav('withdrawals')"><span>💸</span> Withdrawals</div>
+    <div class="nav-item" onclick="nav('addtrade')"><span>⚡</span> Manual Trade</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button onclick="logout()" style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--sub);cursor:pointer;font-size:12px">Sign Out</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="pageTitle">Dashboard</h2>
+    <div class="topbar-pills">
+      <div class="pill green">🟢 System Live</div>
+      <div class="pill" id="pendingPill">Pending: 0</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="sec-dashboard">
+    <div class="cards">
+      <div class="card"><div class="card-label">Total Users</div><div class="card-value blue" id="st-users">0</div></div>
+      <div class="card"><div class="card-label">Total Deposits</div><div class="card-value green" id="st-dep">$0</div></div>
+      <div class="card"><div class="card-label">Total Withdrawals</div><div class="card-value orange" id="st-with">$0</div></div>
+      <div class="card"><div class="card-label">System P&L</div><div class="card-value" id="st-pnl">$0</div></div>
+      <div class="card"><div class="card-label">Open Trades</div><div class="card-value gold" id="st-open">0</div></div>
+      <div class="card"><div class="card-label">Pending Deposits</div><div class="card-value red" id="st-pdep">0</div></div>
+      <div class="card"><div class="card-label">Pending Withdrawals</div><div class="card-value red" id="st-pwit">0</div></div>
+    </div>
+    <div class="sec-header"><h3>Recent Users</h3><button class="btn-sm btn-blue" onclick="nav('users')">View All</button></div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Balance</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+      <tbody id="dashUsersTbl"></tbody></table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="section" id="sec-users">
+    <div class="sec-header"><h3>User Management</h3><span style="font-size:12px;color:var(--sub)" id="userCount"></span></div>
+    <div class="search-bar">
+      <input class="search-input" type="text" id="userSearch" placeholder="Search by name or email..." oninput="filterUsers()"/>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Balance</th><th>P&L</th><th>Trades</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+      <tbody id="usersTbl"></tbody></table>
+    </div>
+  </div>
+
+  <!-- TRADES -->
+  <div class="section" id="sec-trades">
+    <div class="sec-header"><h3>All Trades</h3></div>
+    <div class="search-bar">
+      <input class="search-input" type="text" id="tradeSearch" placeholder="Search pair or user..." oninput="filterTrades()"/>
+      <button class="filter-btn active" onclick="setTradeFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setTradeFilter('open',this)">Open</button>
+      <button class="filter-btn" onclick="setTradeFilter('closed',this)">Closed</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>User</th><th>Pair</th><th>Type</th><th>Amount</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody id="tradesTbl"></tbody></table>
+    </div>
+  </div>
+
+  <!-- DEPOSITS -->
+  <div class="section" id="sec-deposits">
+    <div class="sec-header"><h3>Deposit Requests</h3></div>
+    <div class="search-bar">
+      <button class="filter-btn active" onclick="setDepFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setDepFilter('pending',this)">Pending</button>
+      <button class="filter-btn" onclick="setDepFilter('approved',this)">Approved</button>
+      <button class="filter-btn" onclick="setDepFilter('rejected',this)">Rejected</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Ref</th><th>Status</th><th>Notes</th><th>Date</th><th>Action</th></tr></thead>
+      <tbody id="depsTbl"></tbody></table>
+    </div>
+  </div>
+
+  <!-- WITHDRAWALS -->
+  <div class="section" id="sec-withdrawals">
+    <div class="sec-header"><h3>Withdrawal Requests</h3></div>
+    <div class="search-bar">
+      <button class="filter-btn active" onclick="setWitFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setWitFilter('pending',this)">Pending</button>
+      <button class="filter-btn" onclick="setWitFilter('approved',this)">Approved</button>
+      <button class="filter-btn" onclick="setWitFilter('rejected',this)">Rejected</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+      <tbody id="witsTbl"></tbody></table>
+    </div>
+  </div>
+
+  <!-- MANUAL TRADE -->
+  <div class="section" id="sec-addtrade">
+    <div class="sec-header"><h3>Add Manual Trade</h3></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:550px">
+      <div class="form-group"><label>User ID</label><input type="number" id="mt-uid" placeholder="1"/></div>
+      <div class="form-group"><label>Pair</label>
+        <select id="mt-pair">
+          <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option>
+          <option value="USD/JPY">USD/JPY</option><option value="XAU/USD">XAU/USD (Gold)</option>
+          <option value="BTC/USD">BTC/USD</option><option value="ETH/USD">ETH/USD</option>
+          <option value="AUD/USD">AUD/USD</option><option value="USD/CAD">USD/CAD</option>
+          <option value="NZD/USD">NZD/USD</option><option value="EUR/GBP">EUR/GBP</option>
+          <option value="EUR/JPY">EUR/JPY</option><option value="GBP/JPY">GBP/JPY</option>
+          <option value="XAG/USD">XAG/USD (Silver)</option><option value="WTI/OIL">WTI Oil</option>
+          <option value="BRENT">Brent Oil</option><option value="LTC/USD">LTC/USD</option>
+          <option value="USD/INR">USD/INR</option><option value="USD/SGD">USD/SGD</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Type</label>
+        <select id="mt-type"><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+      </div>
+      <div class="form-group"><label>Amount (USD)</label><input type="number" id="mt-amount" placeholder="100"/></div>
+      <div class="form-group"><label>Entry Price</label><input type="number" id="mt-entry" placeholder="1.0850" step="0.00001"/></div>
+      <div class="form-group"><label>Exit Price (for closed)</label><input type="number" id="mt-exit" placeholder="1.0920" step="0.00001"/></div>
+      <div class="form-group"><label>Profit / Loss (USD)</label><input type="number" id="mt-pnl" placeholder="50 or -30"/></div>
+      <div class="form-group"><label>Status</label>
+        <select id="mt-status"><option value="closed">Closed</option><option value="open">Open</option></select>
+      </div>
+      <div class="form-group"><label>Note (optional)</label><textarea id="mt-note" placeholder="Admin note..."></textarea></div>
+      <button class="btn-sm btn-gold" style="padding:11px 24px;font-size:14px" onclick="addManualTrade()">Add Trade</button>
+      <div id="mt-msg" style="margin-top:10px;font-size:13px;min-height:18px"></div>
+    </div>
+  </div>
+
+</div><!-- end .main -->
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <h3>User Details <span id="modal-uid" style="color:var(--sub);font-size:13px"></span></h3>
+    <div id="userDetailContent"></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal('userModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT BALANCE MODAL -->
+<div class="modal-overlay" id="balModal">
+  <div class="modal">
+    <h3>Edit Balance</h3>
+    <div id="balUserInfo" style="margin-bottom:16px;padding:10px;background:var(--bg3);border-radius:6px;font-size:13px"></div>
+    <div class="form-group"><label>Action</label>
+      <select id="balAction">
+        <option value="set">Set Balance (exact amount)</option>
+        <option value="add">Add to Balance</option>
+        <option value="subtract">Subtract from Balance</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Amount (USD)</label><input type="number" id="balAmount" placeholder="1000"/></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal('balModal')">Cancel</button>
+      <button class="btn-modal btn-save" onclick="saveBalance()">Update Balance</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal">
+    <h3>Reset Password</h3>
+    <div class="form-group"><label>New Password (min 6 chars)</label><input type="password" id="newPw" placeholder="New password"/></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal('pwModal')">Cancel</button>
+      <button class="btn-modal btn-save" onclick="savePassword()">Reset Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEPOSIT ACTION MODAL -->
+<div class="modal-overlay" id="depModal">
+  <div class="modal">
+    <h3>Process Deposit</h3>
+    <div id="depDetailInfo" style="margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:6px;font-size:13px"></div>
+    <div class="form-group"><label>Decision</label>
+      <select id="depAction"><option value="approved">✅ Approve</option><option value="rejected">❌ Reject</option></select>
+    </div>
+    <div class="form-group"><label>Admin Notes</label><textarea id="depNotes" placeholder="Optional note..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal('depModal')">Cancel</button>
+      <button class="btn-modal btn-save" onclick="processDeposit()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAWAL ACTION MODAL -->
+<div class="modal-overlay" id="witModal">
+  <div class="modal">
+    <h3>Process Withdrawal</h3>
+    <div id="witDetailInfo" style="margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:6px;font-size:13px"></div>
+    <div class="form-group"><label>Decision</label>
+      <select id="witAction"><option value="approved">✅ Approve</option><option value="rejected">❌ Reject</option></select>
+    </div>
+    <div class="form-group"><label>Admin Notes</label><textarea id="witNotes" placeholder="Optional note..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" onclick="closeModal('witModal')">Cancel</button>
+      <button class="btn-modal btn-save" onclick="processWithdrawal()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API='';
+const token = localStorage.getItem('pt_token');
+const user  = JSON.parse(localStorage.getItem('pt_user')||'{}');
+if (!token || user.role !== 'admin') window.location.href='/';
+
+const headers={'Content-Type':'application/json','Authorization':'Bearer '+token};
+async function api(method, url, body){
+  const r = await fetch(API+url,{method,headers,body:body?JSON.stringify(body):undefined});
+  return r.json();
+}
+
+let allUsers=[], allTrades=[], allDeps=[], allWits=[];
+let selUserId=null, selDepId=null, selWitId=null;
+let tradeFilter='all', depFilter='all', witFilter='all';
+
+const fmt  = n => parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtD = s => s ? new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '--';
+
+function nav(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const t={dashboard:'Dashboard',users:'User Management',trades:'All Trades',
+            deposits:'Deposits',withdrawals:'Withdrawals',addtrade:'Manual Trade'};
+  document.getElementById('pageTitle').textContent = t[id]||id;
+  if(id==='dashboard')   loadDashboard();
+  if(id==='users')       loadUsers();
+  if(id==='trades')      loadTrades();
+  if(id==='deposits')    loadDeposits();
+  if(id==='withdrawals') loadWithdrawals();
+}
+
+async function loadDashboard(){
+  const s = await api('GET','/api/admin/stats');
+  document.getElementById('st-users').textContent = s.total_users;
+  document.getElementById('st-dep').textContent   = '$'+fmt(s.total_deposits);
+  document.getElementById('st-with').textContent  = '$'+fmt(s.total_withdrawals);
+  const pnl=s.total_pnl||0;
+  document.getElementById('st-pnl').textContent   = (pnl>=0?'+':'')+'$'+fmt(pnl);
+  document.getElementById('st-pnl').className     = 'card-value '+(pnl>=0?'green':'red');
+  document.getElementById('st-open').textContent  = s.open_trades;
+  document.getElementById('st-pdep').textContent  = s.pending_deposits;
+  document.getElementById('st-pwit').textContent  = s.pending_withdrawals;
+  document.getElementById('pendingPill').textContent = `Pending: ${s.pending_deposits+s.pending_withdrawals}`;
+
+  const users = await api('GET','/api/admin/users');
+  const tbody = document.getElementById('dashUsersTbl');
+  if(!users.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:24px">No users</td></tr>';return;}
+  tbody.innerHTML = users.slice(0,8).map(u=>`
+    <tr>
+      <td>#${u.id}</td>
+      <td><b>${u.name}</b></td>
+      <td>${u.email}</td>
+      <td style="color:var(--gold);font-weight:600">$${fmt(u.balance)}</td>
+      <td><span class="tag ${u.status}">${u.status.toUpperCase()}</span></td>
+      <td>${fmtD(u.created_at)}</td>
+      <td><button class="btn-sm btn-blue" onclick="viewUser(${u.id})">View</button></td>
+    </tr>`).join('');
+}
+
+async function loadUsers(){
+  allUsers = await api('GET','/api/admin/users');
+  document.getElementById('userCount').textContent = allUsers.length+' users';
+  renderUsers(allUsers);
+}
+
+function renderUsers(users){
+  const tbody=document.getElementById('usersTbl');
+  if(!users.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--sub);padding:24px">No users</td></tr>';return;}
+  tbody.innerHTML=users.map(u=>`
+    <tr>
+      <td>#${u.id}</td>
+      <td><b>${u.name}</b></td>
+      <td>${u.email}</td>
+      <td>${u.phone||'--'}</td>
+      <td style="color:var(--gold);font-weight:600">$${fmt(u.balance)}</td>
+      <td style="color:${u.total_pnl>=0?'var(--green)':'var(--red)'}">${u.total_pnl>=0?'+':''}$${fmt(u.total_pnl)}</td>
+      <td>${u.open_trades}</td>
+      <td><span class="tag ${u.status}">${u.status.toUpperCase()}</span></td>
+      <td>${fmtD(u.created_at)}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn-sm btn-blue" onclick="viewUser(${u.id})">View</button>
+        <button class="btn-sm btn-gold" onclick="openBalModal(${u.id},'${u.name}',${u.balance})">Balance</button>
+        <button class="btn-sm btn-green" onclick="openPwModal(${u.id})">Reset PW</button>
+        <button class="btn-sm btn-red" onclick="toggleBlock(${u.id},'${u.status}')">${u.status==='active'?'Block':'Unblock'}</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterUsers(){
+  const q=document.getElementById('userSearch').value.toLowerCase();
+  renderUsers(allUsers.filter(u=>u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)));
+}
+
+async function viewUser(id){
+  const d = await api('GET',`/api/admin/users/${id}`);
+  const u=d.user;
+  document.getElementById('modal-uid').textContent = `#${u.id}`;
+  let html=`<div style="margin-bottom:16px">`;
+  html+=`<div class="info-row"><span>Name</span><span>${u.name}</span></div>`;
+  html+=`<div class="info-row"><span>Email</span><span>${u.email}</span></div>`;
+  html+=`<div class="info-row"><span>Phone</span><span>${u.phone||'--'}</span></div>`;
+  html+=`<div class="info-row"><span>Balance</span><span style="color:var(--gold);font-weight:700">$${fmt(u.balance)}</span></div>`;
+  html+=`<div class="info-row"><span>Status</span><span><span class="tag ${u.status}">${u.status.toUpperCase()}</span></span></div>`;
+  html+=`<div class="info-row"><span>Joined</span><span>${fmtD(u.created_at)}</span></div>`;
+  html+=`</div>`;
+
+  if(d.trades.length){
+    html+=`<p style="font-size:12px;color:var(--sub);margin-bottom:8px">RECENT TRADES</p>`;
+    html+=`<div style="overflow-x:auto"><table style="min-width:400px"><thead><tr><th>Pair</th><th>Type</th><th>Amount</th><th>P&L</th><th>Status</th></tr></thead><tbody>`;
+    html+=d.trades.map(t=>`<tr><td>${t.pair}</td><td><span class="tag ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td>$${fmt(t.amount)}</td>
+      <td style="color:${t.profit_loss>=0?'var(--green)':'var(--red)'}">${t.profit_loss>=0?'+':''}$${fmt(t.profit_loss)}</td>
+      <td><span class="tag ${t.status}">${t.status}</span></td></tr>`).join('');
+    html+=`</tbody></table></div>`;
+  }
+  document.getElementById('userDetailContent').innerHTML=html;
+  document.getElementById('modal-uid').textContent=`#${u.id} — ${u.name}`;
+  document.getElementById('userModal').classList.add('show');
+}
+
+function openBalModal(id,name,balance){
+  selUserId=id;
+  document.getElementById('balUserInfo').innerHTML=`<b>${name}</b> — Current: <span style="color:var(--gold)">$${fmt(balance)}</span>`;
+  document.getElementById('balAmount').value='';
+  document.getElementById('balModal').classList.add('show');
+}
+
+async function saveBalance(){
+  const action=document.getElementById('balAction').value;
+  const amount=parseFloat(document.getElementById('balAmount').value);
+  if(isNaN(amount)) return toast('Enter valid amount','red');
+  const r = await api('PUT',`/api/admin/users/${selUserId}/balance`,{action,amount,balance:amount});
+  if(r.error){toast(r.error,'red');return;}
+  toast('Balance updated to $'+fmt(r.balance),'green');
+  closeModal('balModal');
+  loadUsers();
+}
+
+function openPwModal(id){ selUserId=id; document.getElementById('newPw').value=''; document.getElementById('pwModal').classList.add('show'); }
+
+async function savePassword(){
+  const new_password=document.getElementById('newPw').value;
+  if(!new_password||new_password.length<6){toast('Min 6 characters','red');return;}
+  const r=await api('PUT',`/api/admin/users/${selUserId}/password`,{new_password});
+  if(r.error){toast(r.error,'red');return;}
+  toast('Password reset successfully','green');
+  closeModal('pwModal');
+}
+
+async function toggleBlock(id,status){
+  const ns = status==='active'?'blocked':'active';
+  if(!confirm(`${ns==='blocked'?'Block':'Unblock'} this user?`))return;
+  const r=await api('PUT',`/api/admin/users/${id}/status`,{status:ns});
+  if(r.error){toast(r.error,'red');return;}
+  toast(`User ${ns}`,'green');
+  loadUsers();
+}
+
+// TRADES
+let tradesData=[];
+async function loadTrades(){
+  tradesData=await api('GET','/api/admin/trades');
+  renderTrades();
+}
+function renderTrades(){
+  let data=tradesData;
+  const q=(document.getElementById('tradeSearch')?.value||'').toLowerCase();
+  if(q) data=data.filter(t=>t.pair.toLowerCase().includes(q)||(t.name||'').toLowerCase().includes(q));
+  if(tradeFilter==='open')   data=data.filter(t=>t.status==='open');
+  if(tradeFilter==='closed') data=data.filter(t=>t.status==='closed');
+  const tbody=document.getElementById('tradesTbl');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--sub);padding:24px">No trades</td></tr>';return;}
+  tbody.innerHTML=data.map(t=>`
+    <tr>
+      <td>#${t.id}</td>
+      <td>${t.name||''}<br><small style="color:var(--sub)">${t.email||''}</small></td>
+      <td><b>${t.pair}</b></td>
+      <td><span class="tag ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td>$${fmt(t.amount)}</td>
+      <td>${parseFloat(t.entry_price||0).toFixed(4)}</td>
+      <td>${t.exit_price?parseFloat(t.exit_price).toFixed(4):'--'}</td>
+      <td style="color:${t.profit_loss>=0?'var(--green)':'var(--red)'};font-weight:600">
+        ${t.profit_loss>=0?'+':''}$${fmt(t.profit_loss)}</td>
+      <td><span class="tag ${t.status}">${t.status.toUpperCase()}</span></td>
+      <td>${fmtD(t.created_at)}</td>
+    </tr>`).join('');
+}
+function filterTrades(){renderTrades();}
+function setTradeFilter(f,el){
+  tradeFilter=f;
+  document.querySelectorAll('#sec-trades .filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderTrades();
+}
+
+// DEPOSITS
+async function loadDeposits(){
+  allDeps=await api('GET','/api/admin/deposits');
+  renderDeposits();
+}
+function renderDeposits(){
+  let data=allDeps;
+  if(depFilter!=='all') data=data.filter(d=>d.status===depFilter);
+  const tbody=document.getElementById('depsTbl');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--sub);padding:24px">No deposits</td></tr>';return;}
+  tbody.innerHTML=data.map(d=>`
+    <tr>
+      <td>#${d.id}</td>
+      <td>${d.name}<br><small style="color:var(--sub)">${d.email}</small></td>
+      <td style="color:var(--green);font-weight:600">$${fmt(d.amount)}</td>
+      <td>${d.method||'--'}</td>
+      <td style="font-size:11px">${d.txn_ref||'--'}</td>
+      <td><span class="tag ${d.status}">${d.status.toUpperCase()}</span></td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden">${d.notes||'--'}</td>
+      <td>${fmtD(d.created_at)}</td>
+      <td>${d.status==='pending'?`<button class="btn-sm btn-gold" onclick="openDepModal(${d.id},'${d.name}',${d.amount},'${d.method}')">Process</button>`:'--'}</td>
+    </tr>`).join('');
+}
+function setDepFilter(f,el){
+  depFilter=f;
+  document.querySelectorAll('#sec-deposits .filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderDeposits();
+}
+function openDepModal(id,name,amount,method){
+  selDepId=id;
+  document.getElementById('depDetailInfo').innerHTML=`<b>${name}</b> wants to deposit <span style="color:var(--green);font-weight:700">$${fmt(amount)}</span> via ${method}`;
+  document.getElementById('depNotes').value='';
+  document.getElementById('depModal').classList.add('show');
+}
+async function processDeposit(){
+  const status=document.getElementById('depAction').value;
+  const notes=document.getElementById('depNotes').value;
+  const r=await api('PUT',`/api/admin/deposits/${selDepId}`,{status,notes});
+  if(r.error){toast(r.error,'red');return;}
+  toast(r.message,'green');
+  closeModal('depModal');
+  loadDeposits();
+}
+
+// WITHDRAWALS
+async function loadWithdrawals(){
+  allWits=await api('GET','/api/admin/withdrawals');
+  renderWithdrawals();
+}
+function renderWithdrawals(){
+  let data=allWits;
+  if(witFilter!=='all') data=data.filter(w=>w.status===witFilter);
+  const tbody=document.getElementById('witsTbl');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:24px">No withdrawals</td></tr>';return;}
+  tbody.innerHTML=data.map(w=>`
+    <tr>
+      <td>#${w.id}</td>
+      <td>${w.name}<br><small style="color:var(--sub)">${w.email}</small></td>
+      <td style="color:var(--orange);font-weight:600">$${fmt(w.amount)}</td>
+      <td>${w.method||'--'}</td>
+      <td style="font-size:11px;max-width:120px">${w.account_details||'--'}</td>
+      <td><span class="tag ${w.status}">${w.status.toUpperCase()}</span></td>
+      <td>${fmtD(w.created_at)}</td>
+      <td>${w.status==='pending'?`<button class="btn-sm btn-gold" onclick="openWitModal(${w.id},'${w.name}',${w.amount},'${w.method}')">Process</button>`:'--'}</td>
+    </tr>`).join('');
+}
+function setWitFilter(f,el){
+  witFilter=f;
+  document.querySelectorAll('#sec-withdrawals .filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); renderWithdrawals();
+}
+function openWitModal(id,name,amount,method){
+  selWitId=id;
+  document.getElementById('witDetailInfo').innerHTML=`<b>${name}</b> wants to withdraw <span style="color:var(--orange);font-weight:700">$${fmt(amount)}</span> via ${method}`;
+  document.getElementById('witNotes').value='';
+  document.getElementById('witModal').classList.add('show');
+}
+async function processWithdrawal(){
+  const status=document.getElementById('witAction').value;
+  const notes=document.getElementById('witNotes').value;
+  const r=await api('PUT',`/api/admin/withdrawals/${selWitId}`,{status,notes});
+  if(r.error){toast(r.error,'red');return;}
+  toast(r.message,'green');
+  closeModal('witModal');
+  loadWithdrawals();
+}
+
+// MANUAL TRADE
+async function addManualTrade(){
+  const msg=document.getElementById('mt-msg');
+  const body={
+    user_id: parseInt(document.getElementById('mt-uid').value),
+    pair:    document.getElementById('mt-pair').value,
+    type:    document.getElementById('mt-type').value,
+    amount:  parseFloat(document.getElementById('mt-amount').value),
+    entry_price: parseFloat(document.getElementById('mt-entry').value),
+    exit_price:  parseFloat(document.getElementById('mt-exit').value)||null,
+    profit_loss: parseFloat(document.getElementById('mt-pnl').value)||0,
+    status:  document.getElementById('mt-status').value,
+    note:    document.getElementById('mt-note').value
+  };
+  if(!body.user_id||!body.pair||!body.amount||!body.entry_price){
+    msg.style.color='var(--red)'; msg.textContent='Fill all required fields'; return;
+  }
+  const r=await api('POST','/api/admin/trades',body);
+  if(r.error){msg.style.color='var(--red)'; msg.textContent=r.error; return;}
+  msg.style.color='var(--green)'; msg.textContent='✅ Trade added! ID: '+r.id;
+  toast('Manual trade added','green');
+}
+
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function toast(msg,type='green'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+function logout(){
+  localStorage.removeItem('pt_token'); localStorage.removeItem('pt_user');
+  window.location.href='/';
+}
+
+// Boot
+loadDashboard();
+</script>
+</body>
+</html>
