@@ -144,21 +144,36 @@ function adminOnly(req, res, next) {
 }
 
 // ── AUTH ROUTES ───────────────────────────────────────────────
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { name, email, phone, password } = req.body;
+
   if (!name || !email || !password)
     return res.status(400).json({ error: 'Name, email & password required' });
 
-  const exists = db.prepare('SELECT id FROM users WHERE email=?').get(email);
-  if (exists) return res.status(400).json({ error: 'Email already registered' });
-
   const hash = bcrypt.hashSync(password, 10);
-  const result = db.prepare(`INSERT INTO users (name,email,phone,password_hash) VALUES (?,?,?,?)`)
-                   .run(name, email, phone || '', hash);
 
-  const user = db.prepare('SELECT id,name,email,role,balance,status,created_at FROM users WHERE id=?').get(result.lastInsertRowid);
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, user });
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      name,
+      email,
+      phone,
+      password_hash: hash,
+      balance: 0,
+      role: 'user',
+      status: 'active'
+    }])
+    .select()
+    .single();
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  const token = jwt.sign(
+    { id: data.id, email: data.email, role: data.role },
+    JWT_SECRET
+  );
+
+  res.json({ token, user: data });
 });
 
 app.post('/api/auth/login', (req, res) => {
