@@ -3,6 +3,12 @@
 //  Complete backend: Auth, Trades, Wallet, Admin
 // ============================================================
 const express  = require('express');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  'https://zercukdxnaltfawkdfrk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcmN1a2R4bmFsdGZhd2tkZnJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjMxNjQsImV4cCI6MjA5MDYzOTE2NH0.uzJP8PtMoZjyfJJ6iOlYW_4dqwXOjQf55WQD6PwE8CY'
+);
 const cors     = require('cors');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
